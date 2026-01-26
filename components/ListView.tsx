@@ -8,7 +8,7 @@ interface ListViewProps {
   onThoughtClick: (thought: ThoughtCard) => void;
 }
 
-const CATEGORIES: ThoughtCategory[] = ['idea', 'todo', 'worry', 'feeling', 'goal', 'memory'];
+const CATEGORIES: ThoughtCategory[] = ['idea', 'todo', 'feeling', 'goal'];
 
 export const ListView: React.FC<ListViewProps> = ({ thoughts, onThoughtClick }) => {
   const [filter, setFilter] = useState<ThoughtCategory | 'all'>('all');

@@ -65,13 +65,11 @@ const App: React.FC = () => {
   };
 
   const getPositionForCategory = (category: ThoughtCategory): Position => {
-    // Map Layout based on "MindGarden" reference:
-    // To-Do Patch: Top Left
-    // Ideas Meadow: Top Right
-    // Memory Blossoms: Top Center
-    // Feelings Grove: Center Left
-    // Worry Shade: Center Right
-    // Goal Vines: Bottom Center
+    // Map Layout - updated zones:
+    // Duties: Top Left
+    // Ideas: Top Right  
+    // Feelings: Left/Center (merged worry + feeling)
+    // Goals: Bottom Center
 
     let xRange = [0, 100];
     let yRange = [0, 100];
@@ -83,15 +81,10 @@ const App: React.FC = () => {
       case 'idea': 
         // Top Right
         xRange = [65, 85]; yRange = [10, 30]; break;
-      case 'memory': 
-        // Top Center
-        xRange = [40, 60]; yRange = [15, 30]; break;
+
       case 'feeling': 
-        // Center Left
-        xRange = [15, 35]; yRange = [45, 65]; break;
-      case 'worry': 
-        // Center Right
-        xRange = [65, 85]; yRange = [40, 60]; break;
+        // Left/Center - expanded to include former worry area
+        xRange = [15, 45]; yRange = [40, 75]; break;
       case 'goal': 
         // Bottom Center
         xRange = [35, 65]; yRange = [60, 80]; break;
