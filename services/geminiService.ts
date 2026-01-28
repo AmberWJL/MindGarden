@@ -15,6 +15,10 @@ interface AnalysisResponse {
   topic: string;
   hasNextStep: boolean;
   nextStep: NextStep | null;
+  songSuggestion: {
+    query: string;        // Search query for Spotify
+    reasoning: string;    // Why this song fits the mood
+  };
 }
 
 interface WateringResponse {
@@ -43,10 +47,19 @@ async function callWithRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000)
   }
 }
 
-export const generateMindGardenContent = async (text: string): Promise<GeneratedContent> => {
+export const generateMindGardenContent = async (text: string): Promise<GeneratedContent & { songSuggestion: { query: string; reasoning: string } }> => {
   try {
     const analysis = await analyzeTextAndReflect(text);
-    const imageUrl = await generateSymbolicImage(analysis.metaphors, analysis.emotion);
+    
+    // Try to generate image, but use fallback if quota exceeded
+    let imageUrl: string;
+    try {
+      imageUrl = await generateSymbolicImage(analysis.metaphors, analysis.emotion);
+    } catch (imageError: any) {
+      // Use fallback placeholder image when quota exceeded
+      console.warn("Image generation failed, using fallback:", imageError?.message);
+      imageUrl = `https://picsum.photos/500/500?blur=5&grayscale`;
+    }
 
     return {
       imageUrl,
@@ -61,12 +74,20 @@ export const generateMindGardenContent = async (text: string): Promise<Generated
         nextStep: analysis.nextStep,
         intent: analysis.hasNextStep ? 'action' : 'rest' // inferred
       },
+      songSuggestion: analysis.songSuggestion
     };
   } catch (error: any) {
     console.error("Gemini API Error:", error);
+    
+    // Check for quota/rate limit errors
+    if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+      throw new Error("The garden has reached its daily limit. Please try again in a few minutes or check your Gemini API quota.");
+    }
+    
     if (error.message?.includes('overloaded') || error.status === 503) {
        throw new Error("The garden is very busy right now. Please try again in a moment.");
     }
+    
     throw new Error("The garden is cloudy right now. Please try again later.");
   }
 };
@@ -165,6 +186,25 @@ async function analyzeTextAndReflect(userText: string): Promise<AnalysisResponse
     
     Constraint: Steps must be optional invitations ("Maybe...", "If you like...").
 
+    TASK 3: SONG SUGGESTION
+    Based on the emotion, intensity, and metaphors, suggest ONE song that would resonate with this mental state.
+
+    Guidelines:
+    - For high intensity/worry: Calming, ambient, or gentle instrumental
+    - For low energy: Uplifting but not overwhelming
+    - For joy/achievement: Celebratory but tasteful
+    - For sadness: Validating, melancholic, but not depressing
+    - Match metaphors when possible (e.g., "ocean" → beach sounds, "fire" → intense rhythms)
+
+    Format: 
+    - query: "{artist name} {song name}" or "{mood keyword} ambient music"
+    - reasoning: One gentle sentence explaining the connection (max 15 words)
+
+    Avoid: 
+    - Overly clinical suggestions
+    - Songs with harsh/violent themes
+    - Extremely sad/triggering music for vulnerable states
+
     Return STRICT JSON object.
   `;
 
@@ -194,9 +234,17 @@ async function analyzeTextAndReflect(userText: string): Promise<AnalysisResponse
               confidence: { type: Type.NUMBER }
             },
             nullable: true
+          },
+          songSuggestion: {
+            type: Type.OBJECT,
+            properties: {
+              query: { type: Type.STRING, description: "Spotify search query" },
+              reasoning: { type: Type.STRING, description: "Why this song fits (max 15 words)" }
+            },
+            required: ["query", "reasoning"]
           }
         },
-        required: ["category", "topic", "emotion", "intensity", "metaphors", "reflection", "hasNextStep"],
+        required: ["category", "topic", "emotion", "intensity", "metaphors", "reflection", "hasNextStep", "songSuggestion"],
       },
     },
   }));

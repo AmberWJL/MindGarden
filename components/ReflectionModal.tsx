@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Calendar, Sprout, Footprints, Lightbulb, Heart, Send, History } from 'lucide-react';
 import { ThoughtCard, NextStepType, GrowthStage } from '../types';
+import { MusicPlayer } from './MusicPlayer';
 
 interface ReflectionModalProps {
   thought: ThoughtCard | null;
@@ -141,6 +142,9 @@ export const ReflectionModal: React.FC<ReflectionModalProps> = ({
                   </p>
                 </motion.div>
               )}
+
+              {/* Music Player */}
+              <MusicPlayer song={thought.music} />
 
               {/* Journal / Growth Section */}
               <div className="border-t border-stone-100 pt-8">
