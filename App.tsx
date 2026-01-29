@@ -132,7 +132,7 @@ const App: React.FC = () => {
       setIsPlanting(false);
       // Open the detail view immediately for gratification
       setSelectedThought(newCard);
-      toast.success('Planted!', { id: loadingToast });
+      toast.success(`Planted a ${content.meta.plantSpecies} seed`, { id: loadingToast });
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || 'Could not plant seed', { id: loadingToast });
@@ -148,6 +148,8 @@ const App: React.FC = () => {
        
        const updatedThought: ThoughtCard = {
          ...thought,
+         // Update image ONLY if a new one was generated
+         imageUrl: result.newImageUrl || thought.imageUrl, 
          growthStage: result.newStage,
          meta: {
            ...thought.meta,
@@ -171,7 +173,12 @@ const App: React.FC = () => {
        await saveThought(updatedThought);
        await refreshGarden();
        setSelectedThought(updatedThought);
-       toast.success('Nourished', { id: loadingToast });
+       
+       if (result.newImageUrl) {
+           toast.success('Your plant has grown!', { id: loadingToast });
+       } else {
+           toast.success('Nourished', { id: loadingToast });
+       }
      } catch (error) {
        console.error(error);
        toast.error('Failed to water plant', { id: loadingToast });
