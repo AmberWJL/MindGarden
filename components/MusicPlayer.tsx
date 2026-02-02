@@ -47,7 +47,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
       <div className="px-5 pb-4">
         <div className="rounded-xl overflow-hidden shadow-sm">
           <iframe
-            src={`https://open.spotify.com/embed/track/${song.trackId}?utm_source=generator&theme=0`}
+            src={`https://open.spotify.com/embed/track/${song.trackId}?utm_source=generator&theme=0&autoplay=1`}
             width="100%"
             height="152"
             frameBorder="0"
