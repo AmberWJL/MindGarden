@@ -25,19 +25,9 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
         </span>
       </div>
 
-      {/* Album Art & Song Info */}
-      <div className="px-5 pb-4 flex items-start gap-4">
-        {song.albumArt && (
-          <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden shadow-md">
-            <img 
-              src={song.albumArt} 
-              alt={`${song.name} album art`}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-        
-        <div className="flex-1 min-w-0">
+      {/* Song Info */}
+      <div className="px-5 pb-4">
+        <div className="min-w-0">
           <h3 className="font-serif text-lg text-stone-800 font-semibold truncate">
             {song.name}
           </h3>
