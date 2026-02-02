@@ -4,7 +4,6 @@ import { GardenCanvas } from './components/GardenCanvas';
 import { ListView } from './components/ListView';
 import { PlantingModal } from './components/PlantingModal';
 import { ReflectionModal } from './components/ReflectionModal';
-import { SettingsModal } from './components/SettingsModal';
 import { AppView, ThoughtCard, ThoughtCategory, Position } from './types';
 import { generateMindGardenContent, waterMindGardenThought } from './services/geminiService';
 import { saveThought, getThoughts, deleteThought } from './services/storageService';
@@ -14,7 +13,6 @@ import { Key } from 'lucide-react';
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.GARDEN);
   const [isPlanting, setIsPlanting] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedThought, setSelectedThought] = useState<ThoughtCard | null>(null);
   const [gardenThoughts, setGardenThoughts] = useState<ThoughtCard[]>([]);
@@ -256,10 +254,9 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans selection:bg-teal-100 selection:text-teal-900 overflow-hidden">
-      <Header 
-        currentView={view} 
-        setView={setView} 
-        onSettingsClick={() => setIsSettingsOpen(true)}
+      <Header
+        currentView={view}
+        setView={setView}
       />
       
       <main className="pt-16 h-screen">
@@ -273,9 +270,10 @@ const App: React.FC = () => {
 
         {view === AppView.LIST && (
           <div className="h-full overflow-y-auto">
-            <ListView 
+            <ListView
               thoughts={gardenThoughts}
               onThoughtClick={setSelectedThought}
+              onDelete={handleDelete}
             />
           </div>
         )}
@@ -294,12 +292,6 @@ const App: React.FC = () => {
         onClose={() => setSelectedThought(null)}
         onDelete={handleDelete}
         onWater={handleWater}
-      />
-
-      <SettingsModal 
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onSave={refreshGarden}
       />
 
       <Toaster 

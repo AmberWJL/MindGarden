@@ -224,7 +224,7 @@ export const ReflectionModal: React.FC<ReflectionModalProps> = ({
                 className="text-stone-400 hover:text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider"
               >
                 <Trash2 size={14} />
-                <span>Clear</span>
+                <span>Delete</span>
               </button>
           </div>
         </motion.div>

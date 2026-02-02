@@ -266,9 +266,7 @@ async function generateBotanyImage(species: string, stage: GrowthStage, emotion:
 
     Composition:
     - Centered plant, front-facing or slight angle.
-    - Isolated on a SOLID PURE WHITE BACKGROUND (HEX #FFFFFF).
-    - No checkerboard patterns.
-    - No transparency alpha channel (use white instead).
+    - Isolated on a TRANSPARENT BACKGROUND (alpha channel).
     - Clear silhouette for easy placement.
 
     Constraints:
