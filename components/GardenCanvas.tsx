@@ -95,13 +95,13 @@ export const GardenCanvas: React.FC<GardenCanvasProps> = ({
             className="relative flex-shrink-0 w-full h-full md:w-screen md:h-screen snap-center flex items-center justify-center p-4 md:p-8"
           >
             {/* Island Container - Aspect Ratio 3:2 matches the SVG's 1254x836 dimensions */}
-            <div className="relative w-full max-w-[800px] aspect-[3/2]">
+            <div className="relative w-full max-w-[800px] aspect-[3/2] isolate">
               
               {/* Island SVG Image */}
               <img 
                 src="./island.svg" 
                 alt="Floating Garden Island"
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none mix-blend-multiply opacity-90 select-none"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none mix-blend-multiply select-none"
               />
               
               {/* Plants for this island */}

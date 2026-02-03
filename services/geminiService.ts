@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type, Schema, GenerateContentResponse } from "@google/genai";
+import { removeBackground as imglyRemoveBackground } from "@imgly/background-removal";
 import { GeneratedContent, ThoughtMeta, ThoughtCategory, NextStep, ThoughtCard, GrowthStage } from "../types";
 
 const TEXT_MODEL = "gemini-3-flash-preview";
@@ -75,6 +76,25 @@ const getClient = () => {
   if (!apiKey) throw new Error("API Key is missing.");
   return new GoogleGenAI({ apiKey });
 };
+
+// --- BACKGROUND REMOVAL ---
+
+export async function removeBackground(dataUri: string): Promise<string> {
+  // Convert base64 data URI to Blob
+  const res = await fetch(dataUri);
+  const blob = await res.blob();
+
+  // Run client-side background removal (WASM + ONNX, ~40MB model cached after first use)
+  const resultBlob = await imglyRemoveBackground(blob);
+
+  // Convert result back to base64 data URI
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(resultBlob);
+  });
+}
 
 // --- MAIN FUNCTIONS ---
 
@@ -345,7 +365,9 @@ async function generateBotanyImage(species: string, stage: GrowthStage, emotion:
     - NO rough brush strokes
     - NO text
     - NO frames
-    - NO background scenery (no soil, sky, pots, or shadows)
+    - NO shadows or drop shadows beneath the plant
+    - NO ground shadow, cast shadow, or ambient occlusion
+    - NO background scenery (no soil, sky, pots)
   `;
 
   const response = await callWithRetry<GenerateContentResponse>(() => ai.models.generateContent({
@@ -362,5 +384,13 @@ async function generateBotanyImage(species: string, stage: GrowthStage, emotion:
   const candidate = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
   if (!candidate?.inlineData?.data) throw new Error("No image generated");
 
-  return `data:${candidate.inlineData.mimeType};base64,${candidate.inlineData.data}`;
+  const rawDataUri = `data:${candidate.inlineData.mimeType};base64,${candidate.inlineData.data}`;
+
+  // Remove background for true transparency
+  try {
+    return await removeBackground(rawDataUri);
+  } catch (bgError) {
+    console.warn("Background removal failed, using original image:", bgError);
+    return rawDataUri;
+  }
 }

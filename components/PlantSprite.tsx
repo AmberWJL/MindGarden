@@ -31,7 +31,6 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({ thought, onClick }) =>
         left: `${localX}%`,
         top: `${localY}%`,
         zIndex: Math.floor(localY),
-        mixBlendMode: 'multiply',
       }}
       className="cursor-pointer group flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-[85%]"
       onClick={() => onClick(thought)}

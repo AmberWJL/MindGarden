@@ -45,10 +45,10 @@ const FilterDropdown: React.FC<{
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors bg-white border border-stone-200 text-stone-600 hover:bg-stone-50"
+        className="relative flex items-center justify-center w-40 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors bg-white border border-stone-200 text-stone-600 hover:bg-stone-50"
       >
         {selected?.label}
-        <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={12} className={`absolute right-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence>
         {open && (
