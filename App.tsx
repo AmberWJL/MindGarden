@@ -10,7 +10,7 @@ import { saveThought, getThoughts, deleteThought } from './services/storageServi
 import { searchTrack } from './services/spotifyService';
 import { Toaster, toast } from 'react-hot-toast';
 import { Key } from 'lucide-react';
-import { getNextAvailableSlot, slotToPosition, migratePosition, SLOTS_PER_ISLAND } from './hooks/useIslandLayout';
+import { getNextAvailableSlot, slotToPosition, migratePosition, worldPositionToThought, SLOTS_PER_ISLAND } from './hooks/useIslandLayout';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.GARDEN);
@@ -218,6 +218,18 @@ const App: React.FC = () => {
     }
   };
 
+  const handlePlantDragEnd = async (thoughtId: string, worldX: number, worldY: number) => {
+    const newPosition = worldPositionToThought(worldX, worldY);
+    const thought = gardenThoughts.find(t => t.id === thoughtId);
+    if (!thought) return;
+
+    const updatedThought = { ...thought, position: newPosition };
+    await saveThought(updatedThought);
+    setGardenThoughts(prev =>
+      prev.map(t => t.id === thoughtId ? updatedThought : t)
+    );
+  };
+
   if (!hasApiKey) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-6 relative overflow-hidden">
@@ -262,6 +274,7 @@ const App: React.FC = () => {
             islandCount={islandCount}
             onPlantClick={setSelectedThought}
             onNewThoughtClick={() => setIsPlanting(true)}
+            onPlantDragEnd={handlePlantDragEnd}
           />
         )}
 

@@ -3,7 +3,7 @@ import { Stage, Layer, Image as KonvaImage, Text, Rect } from 'react-konva';
 import Konva from 'konva';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import { ThoughtCard } from '../types';
+import { ThoughtCard, Position } from '../types';
 import { KonvaPlantSprite } from './KonvaPlantSprite';
 import { useKonvaCamera } from '../hooks/useKonvaCamera';
 import {
@@ -20,6 +20,7 @@ interface GardenCanvasProps {
   islandCount: number;
   onPlantClick: (thought: ThoughtCard) => void;
   onNewThoughtClick: () => void;
+  onPlantDragEnd?: (thoughtId: string, worldX: number, worldY: number) => void;
 }
 
 // Load and cache the island background image
@@ -81,6 +82,7 @@ export const GardenCanvas: React.FC<GardenCanvasProps> = ({
   islandCount,
   onPlantClick,
   onNewThoughtClick,
+  onPlantDragEnd,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageSize = useStageSize(containerRef);
@@ -212,6 +214,7 @@ export const GardenCanvas: React.FC<GardenCanvasProps> = ({
               key={thought.id}
               thought={thought}
               onClick={onPlantClick}
+              onDragEnd={onPlantDragEnd}
             />
           ))}
         </Layer>
