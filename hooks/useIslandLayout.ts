@@ -9,11 +9,12 @@ const OLD_ISLAND_SLOTS: Position[] = [
   { x: 65, y: 70 }, { x: 85, y: 75 }, { x: 75, y: 85 },
 ];
 
-// 12 predefined percentage slots per island (% of full SVG 1254x836)
+// 30 predefined percentage slots per island (% of full SVG 1254x836)
 // Left island green surface: ~x:4-53%, y:34-65% (L-shaped)
 // Right island green surface: ~x:55-88%, y:38-72% (kidney-shaped)
 export const ISLAND_SLOTS: Position[] = [
-  // Left Island (Large L-Shape)
+  // --- Left Island (Large L-Shape) — 18 slots ---
+  // Original 7
   { x: 13, y: 43 },  // upper-left
   { x: 27, y: 38 },  // upper-center
   { x: 42, y: 42 },  // upper-right
@@ -29,7 +30,7 @@ export const ISLAND_SLOTS: Position[] = [
   { x: 72, y: 65 },  // lower-center
 ];
 
-export const SLOTS_PER_ISLAND = ISLAND_SLOTS.length; // 12
+export const SLOTS_PER_ISLAND = ISLAND_SLOTS.length; // 30
 
 // Island dimensions in world pixels (3:2 aspect ratio)
 export const ISLAND_WIDTH = 900;
@@ -137,6 +138,49 @@ export function thoughtToWorldPosition(thought: ThoughtCard): { x: number; y: nu
   return {
     x: origin.x + cropFracX * ISLAND_WIDTH,
     y: origin.y + cropFracY * ISLAND_HEIGHT,
+  };
+}
+
+/**
+ * Converts world-pixel coordinates back to a percentage-based Position for storage.
+ * This is the inverse of thoughtToWorldPosition().
+ */
+export function worldPositionToThought(worldX: number, worldY: number): Position {
+  // Determine which island this falls on
+  let bestIsland = 0;
+  let bestDist = Infinity;
+
+  // Check a reasonable range of islands (up to 20)
+  for (let i = 0; i < 20; i++) {
+    const origin = getIslandOrigin(i);
+    const centerX = origin.x + ISLAND_WIDTH / 2;
+    const centerY = origin.y + ISLAND_HEIGHT / 2;
+    const dist = Math.abs(worldX - centerX) + Math.abs(worldY - centerY);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestIsland = i;
+    }
+  }
+
+  const origin = getIslandOrigin(bestIsland);
+
+  // Convert world pixel to crop fraction
+  const cropFracX = (worldX - origin.x) / ISLAND_WIDTH;
+  const cropFracY = (worldY - origin.y) / ISLAND_HEIGHT;
+
+  // Convert crop fraction to full SVG percentage
+  const srcPixelX = cropFracX * SVG_CROP.width + SVG_CROP.x;
+  const srcPixelY = cropFracY * SVG_CROP.height + SVG_CROP.y;
+  const pctX = (srcPixelX / SVG_FULL_W) * 100;
+  const pctY = (srcPixelY / SVG_FULL_H) * 100;
+
+  // Clamp to valid island surface area (roughly 5-95%)
+  const clampedLocalX = Math.max(5, Math.min(95, pctX));
+  const clampedLocalY = Math.max(30, Math.min(80, pctY));
+
+  return {
+    x: bestIsland * 100 + clampedLocalX,
+    y: clampedLocalY,
   };
 }
 

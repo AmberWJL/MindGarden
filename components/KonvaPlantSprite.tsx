@@ -1,12 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Image as KonvaImage, Group, Ellipse, Text, Rect } from 'react-konva';
 import Konva from 'konva';
-import { ThoughtCard } from '../types';
+import { ThoughtCard, Position } from '../types';
 import { thoughtToWorldPosition } from '../hooks/useIslandLayout';
 
 interface KonvaPlantSpriteProps {
   thought: ThoughtCard;
   onClick: (thought: ThoughtCard) => void;
+  onDragEnd?: (thoughtId: string, worldX: number, worldY: number) => void;
 }
 
 // Image cache: URL -> HTMLImageElement
@@ -51,10 +52,13 @@ function getPlantSize(stage: string): number {
   }
 }
 
-export const KonvaPlantSprite: React.FC<KonvaPlantSpriteProps> = React.memo(({ thought, onClick }) => {
+export const KonvaPlantSprite: React.FC<KonvaPlantSpriteProps> = React.memo(({ thought, onClick, onDragEnd }) => {
   const image = useLoadImage(thought.imageUrl);
   const groupRef = useRef<Konva.Group>(null);
   const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const bobAnimRef = useRef<Konva.Animation | null>(null);
+  const bobBaseYRef = useRef<number>(0);
 
   const size = getPlantSize(thought.growthStage);
   const worldPos = thoughtToWorldPosition(thought);
@@ -86,24 +90,68 @@ export const KonvaPlantSprite: React.FC<KonvaPlantSpriteProps> = React.memo(({ t
 
     // Floating bob animation (looping)
     const bobDelay = Math.random() * 2000;
-    let bobAnim: Konva.Animation | null = null;
     const startY = group.y();
+    bobBaseYRef.current = startY;
 
     const timerId = setTimeout(() => {
-      bobAnim = new Konva.Animation((frame) => {
+      const anim = new Konva.Animation((frame) => {
         if (!frame) return;
         const offset = Math.sin(frame.time / 1000) * 3;
-        group.y(startY + offset);
+        group.y(bobBaseYRef.current + offset);
       }, group.getLayer());
-      bobAnim.start();
+      bobAnimRef.current = anim;
+      anim.start();
     }, bobDelay);
 
     return () => {
       clearTimeout(timerId);
       entryTween.destroy();
-      if (bobAnim) bobAnim.stop();
+      if (bobAnimRef.current) bobAnimRef.current.stop();
     };
   }, []);
+
+  const handleDragStart = useCallback(() => {
+    setDragging(true);
+    // Pause bob animation during drag
+    if (bobAnimRef.current) {
+      bobAnimRef.current.stop();
+    }
+    const group = groupRef.current;
+    if (group) {
+      group.scaleX(1.1);
+      group.scaleY(1.1);
+    }
+  }, []);
+
+  const handleDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    setDragging(false);
+    const group = groupRef.current;
+    if (!group) return;
+
+    // Remove lift effect
+    group.scaleX(1);
+    group.scaleY(1);
+
+    // Calculate world position from the group's new position
+    // The group position is the draw position (top-left corner of the plant).
+    // Convert back to the "anchor point" (center-bottom of plant).
+    const newDrawX = group.x();
+    const newDrawY = group.y();
+    const newWorldX = newDrawX + size / 2;
+    const newWorldY = newDrawY + size * 0.85;
+
+    // Update bob base Y to new position
+    bobBaseYRef.current = newDrawY;
+
+    // Resume bob animation
+    if (bobAnimRef.current) {
+      bobAnimRef.current.start();
+    }
+
+    if (onDragEnd) {
+      onDragEnd(thought.id, newWorldX, newWorldY);
+    }
+  }, [thought.id, size, onDragEnd]);
 
   if (!image) return null;
 
@@ -112,11 +160,20 @@ export const KonvaPlantSprite: React.FC<KonvaPlantSpriteProps> = React.memo(({ t
       ref={groupRef}
       x={drawX}
       y={drawY}
-      onClick={() => onClick(thought)}
-      onTap={() => onClick(thought)}
+      draggable
+      dragDistance={5}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onClick={(e) => {
+        // dragDistance ensures this only fires for clicks, not drags
+        onClick(thought);
+      }}
+      onTap={(e) => {
+        onClick(thought);
+      }}
       onMouseEnter={(e) => {
         const stage = e.target.getStage();
-        if (stage) stage.container().style.cursor = 'pointer';
+        if (stage) stage.container().style.cursor = dragging ? 'grabbing' : 'grab';
         setHovered(true);
       }}
       onMouseLeave={(e) => {
@@ -129,9 +186,9 @@ export const KonvaPlantSprite: React.FC<KonvaPlantSpriteProps> = React.memo(({ t
       <Ellipse
         x={size / 2}
         y={size * 0.92}
-        radiusX={size * 0.25}
-        radiusY={3}
-        fill="rgba(28, 25, 23, 0.08)"
+        radiusX={dragging ? size * 0.3 : size * 0.25}
+        radiusY={dragging ? 5 : 3}
+        fill={dragging ? "rgba(28, 25, 23, 0.12)" : "rgba(28, 25, 23, 0.08)"}
       />
 
       {/* Plant image */}
@@ -139,14 +196,14 @@ export const KonvaPlantSprite: React.FC<KonvaPlantSpriteProps> = React.memo(({ t
         image={image}
         width={size}
         height={size}
-        scaleX={hovered ? 1.1 : 1}
-        scaleY={hovered ? 1.1 : 1}
-        offsetX={hovered ? size * 0.05 : 0}
-        offsetY={hovered ? size * 0.05 : 0}
+        scaleX={hovered && !dragging ? 1.1 : 1}
+        scaleY={hovered && !dragging ? 1.1 : 1}
+        offsetX={hovered && !dragging ? size * 0.05 : 0}
+        offsetY={hovered && !dragging ? size * 0.05 : 0}
       />
 
       {/* Hover label */}
-      {hovered && (
+      {hovered && !dragging && (
         <Group x={size / 2} y={-12}>
           <Rect
             offsetX={getTextWidth(thought.meta.topic.replace(/\b\w/g, c => c.toUpperCase())) / 2 + 10}
