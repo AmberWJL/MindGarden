@@ -50,7 +50,7 @@ function useIslandImage(): HTMLImageElement | null {
       islandImageCache.loading = false;
       console.warn('Failed to load island background');
     };
-    image.src = './island.svg';
+    image.src = '/island.svg';
   }, []);
 
   return img;

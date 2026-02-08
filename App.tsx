@@ -64,6 +64,29 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSeedGarden = async () => {
+    // Clear current garden
+    const current = await getThoughts();
+    for (const t of current) {
+      await deleteThought(t.id);
+    }
+
+    // Plant seeds
+    const { SEED_THOUGHTS } = await import('./seedData');
+
+    // Assign slots
+    for (const seed of SEED_THOUGHTS) {
+      // We need to fetch fresh thoughts to get correct next slot
+      const fresh = await getThoughts();
+      const position = getNextAvailablePosition(fresh);
+      seed.position = position;
+      await saveThought(seed);
+    }
+
+    await refreshGarden();
+    toast.success("Garden seeded with demo plants!");
+  };
+
   const handleApiKeySelect = async () => {
     const win = window as any;
     if (win.aistudio) {
@@ -111,13 +134,13 @@ const App: React.FC = () => {
   const handlePlant = async (text: string) => {
     setIsLoading(true);
     const loadingToast = toast.loading('The soil is listening...');
-    
+
     try {
       const { songSuggestion, ...content } = await generateMindGardenContent(text);
-      
+
       // Calculate position based on next available slot
       const position = getNextAvailablePosition(gardenThoughts);
-      
+
       // Try to fetch music recommendation from Spotify (non-blocking)
       let musicRecommendation = undefined;
       try {
@@ -132,7 +155,7 @@ const App: React.FC = () => {
         // Silently fail - thought still gets planted without music
         console.warn('Failed to fetch music:', musicError);
       }
-      
+
       const newCard: ThoughtCard = {
         ...content,
         id: crypto.randomUUID(),
@@ -147,12 +170,12 @@ const App: React.FC = () => {
 
       await saveThought(newCard);
       await refreshGarden();
-      
+
       setIsPlanting(false);
-      
+
       // Small delay to let animation start
       setTimeout(() => setSelectedThought(newCard), 800);
-      
+
       toast.success(`Planted a ${content.meta.plantSpecies} seed`, { id: loadingToast });
     } catch (error: any) {
       console.error(error);
@@ -163,46 +186,46 @@ const App: React.FC = () => {
   };
 
   const handleWater = async (thought: ThoughtCard, updateText: string) => {
-     const loadingToast = toast.loading('Watering...');
-     try {
-       const result = await waterMindGardenThought(thought, updateText);
-       
-       const updatedThought: ThoughtCard = {
-         ...thought,
-         imageUrl: result.newImageUrl || thought.imageUrl, 
-         growthStage: result.newStage,
-         meta: {
-           ...thought.meta,
-           hasNextStep: result.hasNextStep,
-           nextStep: result.nextStep
-         },
-         updates: [
-           {
-             id: crypto.randomUUID(),
-             timestamp: Date.now(),
-             text: updateText,
-             aiResponse: result.acknowledgment,
-             previousStage: thought.growthStage,
-             newStage: result.newStage,
-             nextStep: result.nextStep
-           },
-           ...thought.updates
-         ]
-       };
+    const loadingToast = toast.loading('Watering...');
+    try {
+      const result = await waterMindGardenThought(thought, updateText);
 
-       await saveThought(updatedThought);
-       await refreshGarden();
-       setSelectedThought(updatedThought);
-       
-       if (result.newImageUrl) {
-           toast.success('Your plant has grown!', { id: loadingToast });
-       } else {
-           toast.success('Nourished', { id: loadingToast });
-       }
-     } catch (error) {
-       console.error(error);
-       toast.error('Failed to water plant', { id: loadingToast });
-     }
+      const updatedThought: ThoughtCard = {
+        ...thought,
+        imageUrl: result.newImageUrl || thought.imageUrl,
+        growthStage: result.newStage,
+        meta: {
+          ...thought.meta,
+          hasNextStep: result.hasNextStep,
+          nextStep: result.nextStep
+        },
+        updates: [
+          {
+            id: crypto.randomUUID(),
+            timestamp: Date.now(),
+            text: updateText,
+            aiResponse: result.acknowledgment,
+            previousStage: thought.growthStage,
+            newStage: result.newStage,
+            nextStep: result.nextStep
+          },
+          ...thought.updates
+        ]
+      };
+
+      await saveThought(updatedThought);
+      await refreshGarden();
+      setSelectedThought(updatedThought);
+
+      if (result.newImageUrl) {
+        toast.success('Your plant has grown!', { id: loadingToast });
+      } else {
+        toast.success('Nourished', { id: loadingToast });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to water plant', { id: loadingToast });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -235,21 +258,21 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-6 relative overflow-hidden">
         {/* Decorative background */}
         <div className="absolute inset-0 pointer-events-none opacity-40">
-           <div className="absolute top-1/4 left-1/4 w-[50vw] h-[50vw] bg-amber-100 rounded-full blur-3xl mix-blend-multiply" />
-           <div className="absolute bottom-1/4 right-1/4 w-[50vw] h-[50vw] bg-teal-100 rounded-full blur-3xl mix-blend-multiply" />
+          <div className="absolute top-1/4 left-1/4 w-[50vw] h-[50vw] bg-amber-100 rounded-full blur-3xl mix-blend-multiply" />
+          <div className="absolute bottom-1/4 right-1/4 w-[50vw] h-[50vw] bg-teal-100 rounded-full blur-3xl mix-blend-multiply" />
         </div>
 
         <div className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-white/50 text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-amber-200 to-rose-200 rounded-full mx-auto mb-6 flex items-center justify-center shadow-inner">
-             <Key className="text-stone-600 opacity-60" size={32} />
+            <Key className="text-stone-600 opacity-60" size={32} />
           </div>
-          
+
           <h1 className="font-serif text-3xl text-stone-800 mb-4">Unlock the Garden</h1>
           <p className="text-stone-500 mb-8 leading-relaxed">
             MindGarden uses advanced AI (Gemini 3 Pro) to grow your thoughts into art. Please select your API key to enter.
           </p>
-          
-          <button 
+
+          <button
             onClick={handleApiKeySelect}
             className="w-full py-4 px-6 bg-stone-800 hover:bg-stone-700 text-stone-50 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
           >
@@ -266,7 +289,15 @@ const App: React.FC = () => {
         currentView={view}
         setView={setView}
       />
-      
+      <div className="fixed top-20 right-4 z-50 opacity-50 hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleSeedGarden}
+          className="bg-stone-800 text-white text-xs px-2 py-1 rounded shadow"
+        >
+          🌱 Seed
+        </button>
+      </div>
+
       <main className="pt-16 h-screen">
         {view === AppView.GARDEN && (
           <GardenCanvas
@@ -290,21 +321,21 @@ const App: React.FC = () => {
       </main>
 
       {/* Overlays */}
-      <PlantingModal 
-        isOpen={isPlanting} 
+      <PlantingModal
+        isOpen={isPlanting}
         onClose={() => setIsPlanting(false)}
         onPlant={handlePlant}
         isLoading={isLoading}
       />
 
-      <ReflectionModal 
+      <ReflectionModal
         thought={selectedThought}
         onClose={() => setSelectedThought(null)}
         onDelete={handleDelete}
         onWater={handleWater}
       />
 
-      <Toaster 
+      <Toaster
         position="bottom-center"
         toastOptions={{
           style: {

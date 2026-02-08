@@ -22,6 +22,7 @@ MindGarden is an AI-powered reflective journaling application that transforms yo
 - 🔐 **Privacy-First** - Local storage by default, optional cloud sync with Supabase
 - 🎭 **Emotion Tracking** - Each thought is tagged with emotional qualities
 - 📊 **Multiple Views** - Switch between immersive garden view and organized list view
+- 🎵 **Mood-based Music** (optional) - AI suggests Spotify tracks that match your thought’s mood
 
 ---
 
@@ -68,9 +69,10 @@ Unlike traditional journaling apps, MindGarden:
 
 ## 📖 Documentation
 
-- **[USER_GUIDE.md](file:///Users/amberwang/Desktop/MindGarden/USER_GUIDE.md)** - Complete user manual with tips and best practices
-- **[DOCUMENTATION.md](file:///Users/amberwang/Desktop/MindGarden/DOCUMENTATION.md)** - Technical documentation for developers
-- **[AI Studio App](https://ai.studio/apps/drive/1i1GVIO2sZ6qM7quypzeJDmXS3OkUCAJa)** - View this app in Google AI Studio
+- **[USER_GUIDE.md](USER_GUIDE.md)** - Complete user manual with tips and best practices
+- **[DOCUMENTATION.md](DOCUMENTATION.md)** - Technical documentation for developers
+- **[DEPLOY_VERCEL.md](DEPLOY_VERCEL.md)** - Deploy to Vercel step-by-step
+- **[DEMO_SCRIPT.md](DEMO_SCRIPT.md)** - Demo script and talking points
 
 ---
 
@@ -136,6 +138,20 @@ For cross-device synchronization:
 
 Or configure via the Settings modal (⚙️) in the app.
 
+### Optional: Spotify (mood-based music)
+
+To enable AI-suggested music for your thoughts:
+
+1. Create an app at [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Add to `.env`:
+   ```bash
+   SPOTIFY_CLIENT_ID=your_client_id
+   SPOTIFY_CLIENT_SECRET=your_client_secret
+   ```
+3. Redirect URI: `http://localhost:5173` (for local dev).
+
+The app works without Spotify; thoughts will plant and grow normally.
+
 ---
 
 ## 📦 Building for Production
@@ -196,7 +212,7 @@ Check your API key has Imagen permissions. Fallback SVGs will appear if generati
 Verify you're not in incognito/private browsing mode, or configure Supabase for cloud storage.
 
 **Need help?**  
-Check [USER_GUIDE.md](file:///Users/amberwang/Desktop/MindGarden/USER_GUIDE.md) or [DOCUMENTATION.md](file:///Users/amberwang/Desktop/MindGarden/DOCUMENTATION.md)
+Check [USER_GUIDE.md](USER_GUIDE.md) or [DOCUMENTATION.md](DOCUMENTATION.md)
 
 ---
 
@@ -204,34 +220,6 @@ Check [USER_GUIDE.md](file:///Users/amberwang/Desktop/MindGarden/USER_GUIDE.md) 
 
 **Made with 🌱 and AI**
 
-[View in AI Studio](https://ai.studio/apps/drive/1i1GVIO2sZ6qM7quypzeJDmXS3OkUCAJa) • [Documentation](file:///Users/amberwang/Desktop/MindGarden/DOCUMENTATION.md) • [User Guide](file:///Users/amberwang/Desktop/MindGarden/USER_GUIDE.md)
+[Documentation](DOCUMENTATION.md) • [User Guide](USER_GUIDE.md) • [Deploy to Vercel](DEPLOY_VERCEL.md)
 
 </div>
-
-1. Install dependencies:
-   `npm install`
-2. Set up API keys in [.env](.env):
-   - `GEMINI_API_KEY`: Your Gemini API key
-   - `SPOTIFY_CLIENT_ID`: Your Spotify Client ID (see below)
-   - `SPOTIFY_CLIENT_SECRET`: Your Spotify Client Secret (see below)
-3. Run the app:
-   `npm run dev`
-
-### Getting Spotify API Credentials
-
-To enable mood-based music recommendations:
-
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Log in with your Spotify account (or create one)
-3. Click **"Create app"**
-4. Fill in the app details:
-   - App name: "MindGarden" (or any name)
-   - App description: "Personal journaling app"
-   - Redirect URI: `http://localhost:5173` (or leave blank for now)
-   - Check the box to agree to terms
-5. Click **"Save"**
-6. In your app settings, you'll see:
-   - **Client ID** - Copy this to `.env` as `SPOTIFY_CLIENT_ID`
-   - **Client Secret** - Click "View client secret" and copy to `.env` as `SPOTIFY_CLIENT_SECRET`
-
-**Note:** Music recommendations are optional. If Spotify credentials are not configured, thoughts will still be planted without music.
