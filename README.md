@@ -113,8 +113,6 @@ Open your browser at **http://localhost:5173** (or the port Vite prints in the t
 
 - **[USER_GUIDE.md](USER_GUIDE.md)** - Complete user manual with tips and best practices
 - **[DOCUMENTATION.md](DOCUMENTATION.md)** - Technical documentation and architecture diagrams
-- **[DEPLOY_VERCEL.md](DEPLOY_VERCEL.md)** - Deploy to Vercel step-by-step
-- **[DEMO_SCRIPT.md](DEMO_SCRIPT.md)** - Demo script and talking points
 
 ---
 
