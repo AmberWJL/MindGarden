@@ -289,14 +289,6 @@ const App: React.FC = () => {
         currentView={view}
         setView={setView}
       />
-      <div className="fixed top-20 right-4 z-50 opacity-50 hover:opacity-100 transition-opacity">
-        <button
-          onClick={handleSeedGarden}
-          className="bg-stone-800 text-white text-xs px-2 py-1 rounded shadow"
-        >
-          🌱 Seed
-        </button>
-      </div>
 
       <main className="pt-16 h-screen">
         {view === AppView.GARDEN && (

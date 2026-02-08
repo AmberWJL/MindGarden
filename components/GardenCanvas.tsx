@@ -124,7 +124,7 @@ export const GardenCanvas: React.FC<GardenCanvasProps> = ({
       stageSize.height / (worldHeight + 100),
       1 // don't zoom in past 1:1
     );
-    const scale = Math.max(fitScale, 0.15);
+    const scale = Math.max(fitScale * 0.8, 0.15);
 
     const offsetX = (stageSize.width - worldWidth * scale) / 2;
     const offsetY = (stageSize.height - worldHeight * scale) / 2;
@@ -191,17 +191,17 @@ export const GardenCanvas: React.FC<GardenCanvasProps> = ({
             ) : null
           )}
 
-          {/* Empty state text */}
+          {/* Empty state text above the island */}
           {thoughts.length === 0 && (
             <Text
-              x={ISLAND_WIDTH * 0.25}
-              y={ISLAND_HEIGHT * 0.45}
-              text="The soil is listening..."
-              fontSize={18}
+              x={40}
+              y={-70}
+              width={ISLAND_WIDTH}
+              text="The soil is listening, plant a thought..."
+              fontSize={30}
               fontFamily="'Playfair Display', serif"
               fontStyle="italic"
-              fill="#78716c"
-              opacity={0.6}
+              fill="#a8a29e"
               align="center"
             />
           )}
