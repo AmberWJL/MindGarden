@@ -8,6 +8,12 @@ Welcome to **MindGarden**, where your thoughts take root and grow into living ar
 
 MindGarden is an AI-powered journaling tool that transforms your thoughts into botanical illustrations. Each thought you "plant" becomes a unique plant that grows as you reflect on it over time.
 
+### How it works (at a glance)
+
+![MindGarden user flow](architecture-user-hd.png)
+
+*You write a thought → plant or water it → AI creates art and reflection → your garden grows and is saved.*
+
 ### The Growth Metaphor
 
 Your thoughts evolve through four natural stages:

@@ -70,7 +70,7 @@ Unlike traditional journaling apps, MindGarden:
 ## 📖 Documentation
 
 - **[USER_GUIDE.md](USER_GUIDE.md)** - Complete user manual with tips and best practices
-- **[DOCUMENTATION.md](DOCUMENTATION.md)** - Technical documentation for developers
+- **[DOCUMENTATION.md](DOCUMENTATION.md)** - Technical documentation and architecture diagrams
 - **[DEPLOY_VERCEL.md](DEPLOY_VERCEL.md)** - Deploy to Vercel step-by-step
 - **[DEMO_SCRIPT.md](DEMO_SCRIPT.md)** - Demo script and talking points
 
@@ -94,6 +94,16 @@ Unlike traditional journaling apps, MindGarden:
 3. **Garden** - Your thought appears as a plant on a floating island
 4. **Water** - Add updates over time to help your thought grow through stages
 5. **Bloom** - Watch as your thoughts evolve from seeds to fully mature plants
+
+### Architecture (user perspective)
+
+<div align="center">
+<img src="architecture-user-hd.png" alt="MindGarden user flow: You → Plant or Water → AI (art & reflection) → Your Garden → Saved" width="900" />
+</div>
+
+*From your perspective: you write a thought, plant or water it, AI creates art and reflections, and your garden is saved on your device or in the cloud.*
+
+For the **technical architecture** (components, services, APIs), see [DOCUMENTATION.md](DOCUMENTATION.md#architecture).
 
 ---
 

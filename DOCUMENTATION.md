@@ -15,30 +15,45 @@
 ## Project Overview
 
 ### Purpose
-MindGarden is an AI-powered reflective journaling application that transforms thoughts into living visual metaphors. Users "plant" thoughts which are then analyzed by Gemini 3 AI to generate unique botanical imagery and reflective insights. These thoughts grow through four stages (seed, sprout, bloom, fruit) as users continue to reflect and update them.
+MindGarden is an AI-powered reflective journaling application that transforms thoughts into living visual metaphors. Users "plant" thoughts (free-form text); Gemini analyzes them and generates unique botanical imagery and reflective insights. Thoughts grow through four stages (seed, sprout, bloom, mature) as users "water" them with updates.
 
 ### Key Features
-- **AI-Powered Analysis**: Uses Gemini 3 Flash for thought analysis and reflection generation
-- **AI-Generated Imagery**: Creates unique botanical illustrations using Gemini 3 Imagen for each thought
-- **Growth System**: Thoughts evolve through four stages based on user engagement
-- **Visual Garden**: Displays thoughts as plants on floating islands in an archipelago layout
-- **Watering/Updates**: Users can add updates to thoughts, advancing their growth stage
-- **Next Step Suggestions**: AI provides actionable next steps (do, clarify, reflect)
-- **Hybrid Storage**: Supports both Supabase cloud storage and local IndexedDB fallback
-- **Responsive Design**: Works on desktop and mobile devices
+- **AI-Powered Analysis**: Gemini 3 Flash for thought analysis, reflection generation, and category/emotion tagging (category is inferred by AI: idea, todo, feeling, goal, memory)
+- **AI-Generated Imagery**: Unique botanical illustrations via Gemini image model; optional client-side background removal (@imgly/background-removal) for transparent plant art
+- **Growth System**: Thoughts evolve through four stages (seed → sprout → bloom → mature) based on watering and AI assessment
+- **Visual Garden**: Konva-based canvas with zoom and pan; plants on floating islands in a grid layout (multiple islands, 12 slots per island)
+- **Watering/Updates**: Users add updates to thoughts; AI responds and can advance the growth stage, with new imagery when the stage changes
+- **Next Step Suggestions**: AI suggests actionable next steps (do, clarify, reflect)
+- **Mood-Based Music**: Optional Spotify integration—Gemini suggests a song per thought; Spotify API resolves the track and an embedded player is shown in the reflection modal
+- **Hybrid Storage**: Supabase (optional) or local IndexedDB (idb-keyval) as fallback; user-scoped data
+- **Responsive Design**: Works on desktop and mobile
 
 ### Concept
-The application uses botanical growth as a metaphor for thought development:
+Botanical growth as a metaphor for thought development:
 - **Seed**: Initial thought is planted
 - **Sprout**: First reflection begins to emerge
 - **Bloom**: Thought develops with updates and insights
-- **Fruit**: Thought reaches maturity
+- **Mature**: Thought reaches full maturity
 
 ---
 
 ## Architecture
 
-### Application Structure
+Two diagrams are available in the repo:
+
+- **User perspective** — simple flow from the user's point of view: [architecture-user-hd.png](architecture-user-hd.png)
+- **Technical structure** — components, services, and external APIs: see below and [architecture-hd.png](architecture-hd.png)
+
+### User flow (high level)
+
+![MindGarden user architecture](architecture-user-hd.png)
+
+### Application Structure (technical)
+
+![MindGarden technical architecture](architecture-hd.png)
+
+<details>
+<summary>Mermaid source (for editors that render Mermaid)</summary>
 
 ```mermaid
 graph TD
@@ -49,35 +64,45 @@ graph TD
     A --> F[ReflectionModal]
     A --> G[SettingsModal]
     
-    C --> H[PlantSprite]
+    C --> H[KonvaPlantSprite]
+    C --> I2[useKonvaCamera]
+    C --> I3[useIslandLayout]
+    
+    F --> M2[MusicPlayer]
     
     A --> I[geminiService]
     A --> J[storageService]
+    A --> S[spotifyService]
     J --> K[supabaseClient]
     J --> L[IndexedDB/idb-keyval]
     
     I --> M[Gemini AI API]
+    S --> SP[Spotify API]
     K --> N[Supabase Database]
 ```
+
+</details>
 
 ### Data Flow
 
 1. **Planting a Thought**
    ```
-   User Input → PlantingModal → geminiService.generateMindGardenContent()
+   User Input (text) → PlantingModal → geminiService.generateMindGardenContent()
    ↓
-   [Gemini Analysis + Image Generation]
+   [Gemini: analyze + reflect + image gen + optional background removal + songSuggestion]
    ↓
-   ThoughtCard Object → storageService.saveThought()
+   [Optional: spotifyService.searchTrack(songSuggestion.query) → music on ThoughtCard]
    ↓
-   [Supabase or Local Storage] → Refresh Garden → UI Update
+   ThoughtCard (with position from useIslandLayout) → storageService.saveThought()
+   ↓
+   [Supabase or IndexedDB] → refreshGarden() → UI Update
    ```
 
 2. **Watering a Thought (Update)**
    ```
    User Update → ReflectionModal → geminiService.waterMindGardenThought()
    ↓
-   [Gemini Analysis + Optional New Image]
+   [Gemini: acknowledgment + newStage + optional new image]
    ↓
    Updated ThoughtCard → storageService.saveThought()
    ↓
@@ -114,19 +139,24 @@ The `storageService` automatically selects the appropriate backend.
 - **Vite 6.2.0**: Build tool and dev server
 
 ### UI & Styling
-- **TailwindCSS 3.x** (via CDN): Utility-first CSS
+- **TailwindCSS 3.x** (via CDN in `index.html`): Utility-first CSS
 - **Framer Motion 12.29.0**: Animations and transitions
 - **Lucide React 0.563.0**: Icon library
+- **Konva 10.2.0** / **react-konva 19.2.1**: Canvas-based garden (zoom, pan, plant sprites)
 - **Google Fonts**: Playfair Display (serif) and Outfit (sans-serif)
 
 ### AI & Generation
 - **@google/genai 1.38.0**: Gemini API client
-  - `gemini-3-flash-preview`: Text analysis and reflection
-  - `gemini-3-flash-preview-i`: Image generation (Imagen)
+  - **gemini-3-flash-preview**: Text analysis, reflection, next steps, song suggestions
+  - **gemini-3-pro-image-preview**: Botanical image generation (Imagen)
+- **@imgly/background-removal 1.7.0**: Client-side background removal for generated plant images (transparent PNG-style result)
+
+### APIs & External Services
+- **Spotify Web API**: Track search for mood-based song recommendations (OAuth Client Credentials flow, token caching)
 
 ### Storage
-- **@supabase/supabase-js 2.39.0**: Cloud database client
-- **idb-keyval 6.2.1**: IndexedDB wrapper for local storage
+- **@supabase/supabase-js 2.39.0**: Optional cloud database (PostgreSQL)
+- **idb-keyval 6.2.1**: IndexedDB wrapper for local storage fallback
 
 ### Utilities
 - **react-hot-toast 2.6.0**: Notification system
@@ -135,7 +165,7 @@ The `storageService` automatically selects the appropriate backend.
 
 ## Core Components
 
-### [App.tsx](file:///Users/amberwang/Desktop/MindGarden/App.tsx)
+### [App.tsx](App.tsx)
 
 **Purpose**: Main application container and orchestrator
 
@@ -146,39 +176,39 @@ The `storageService` automatically selects the appropriate backend.
 - `isLoading`: Loading state for async operations
 - `selectedThought`: Currently selected thought for detail view
 - `gardenThoughts`: Array of all thought cards
+- `islandCount`: Number of islands to render (grows when slots fill)
 - `hasApiKey`: Whether Gemini API key is available
 
 **Key Functions**:
-- `refreshGarden()`: Loads thoughts from storage and updates state
-- `handlePlant(text)`: Creates new thought via AI, assigns position, saves to storage
-- `handleWater(thought, updateText)`: Updates existing thought via AI, advances growth stage
+- `refreshGarden()`: Loads thoughts from storage, runs position migration if needed, updates state
+- `handlePlant(text)`: Calls `generateMindGardenContent`, optionally `searchTrack` for music, assigns position via `getNextAvailablePosition`, saves ThoughtCard
+- `handleWater(thought, updateText)`: Updates thought via `waterMindGardenThought`, saves and refreshes
 - `handleDelete(id)`: Removes thought from storage
-- `getNextAvailablePosition()`: Calculates placement for new thoughts using slot-based system
+- `getNextAvailablePosition()`: Uses `getNextAvailableSlot` and `slotToPosition` from `useIslandLayout`; expands island count when all slots are full
 
-**Island Slot System**:
-The app uses predefined coordinates for plant placement across multiple "islands":
-- 12 slots per island (fixed coordinates)
-- Islands scroll horizontally
-- Slots are reused when thoughts are deleted (gap-filling algorithm)
+**Island Slot System** (see `hooks/useIslandLayout.ts`):
+- 12 slots per island (percent-based positions on a single island SVG)
+- Multiple islands in a grid (2 per row); new islands added when current ones are full
+- Slot allocation is gap-filling; position migration supports legacy coordinates
 
-### [GardenCanvas.tsx](file:///Users/amberwang/Desktop/MindGarden/components/GardenCanvas.tsx)
+### [GardenCanvas.tsx](components/GardenCanvas.tsx)
 
-**Purpose**: Visual garden display with horizontal scrolling islands
+**Purpose**: Konva-based canvas that renders the garden with zoom and pan
 
 **Features**:
-- Horizontal scrolling container (snap-scroll on mobile)
-- SVG island background (`island.svg`)
-- Atmospheric particle effects
-- Navigation controls for desktop
-- Empty state prompt
-- "Sow a New Seed" CTA button
+- **Konva Stage/Layer**: Full canvas with configurable world size from `useIslandLayout`
+- **Zoom**: Mouse wheel zoom (anchored to cursor), min/max scale via `useKonvaCamera`
+- **Pan**: Pointer drag on stage background (not on plants)
+- **Island background**: Single island image (`island.svg`) repeated per island; crop region and dimensions from `useIslandLayout`; blend mode multiply for seamless look
+- **Plants**: Rendered by `KonvaPlantSprite` at world positions from `thoughtToWorldPosition`
+- Empty state and "Sow a New Seed" CTA button (Framer Motion)
+- Responsive stage size from container ref
 
 **Layout**:
-- Each island: 3:2 aspect ratio matching SVG dimensions
-- Plants positioned as percentages relative to island container
-- Responsive sizing for mobile and desktop
+- Island dimensions and gaps defined in `useIslandLayout` (e.g. `ISLAND_WIDTH`, `ISLAND_HEIGHT`, `ISLAND_GAP`, `ISLANDS_PER_ROW`)
+- World size computed by `getWorldSize(islandCount)`
 
-### [ListView.tsx](file:///Users/amberwang/Desktop/MindGarden/components/ListView.tsx)
+### [ListView.tsx](components/ListView.tsx)
 
 **Purpose**: List view of all thoughts with categorization
 
@@ -188,37 +218,33 @@ The app uses predefined coordinates for plant placement across multiple "islands
 - Click to open ReflectionModal
 - Grid layout on larger screens
 
-### [PlantingModal.tsx](file:///Users/amberwang/Desktop/MindGarden/components/PlantingModal.tsx)
+### [PlantingModal.tsx](components/PlantingModal.tsx)
 
 **Purpose**: Modal for creating new thoughts
 
 **Features**:
-- Text input for user's thought
-- Category selection (idea, todo, worry, feeling, goal, memory, other)
-- Loading state during AI generation
-- Glassmorphic design with backdrop blur
+- Single text input for the thought (no category picker—category is inferred by Gemini)
+- Loading state during AI generation (with toast)
+- Backdrop blur and Framer Motion enter/exit
+- Cancel and submit actions
 
-### [ReflectionModal.tsx](file:///Users/amberwang/Desktop/MindGarden/components/ReflectionModal.tsx)
+### [ReflectionModal.tsx](components/ReflectionModal.tsx)
 
 **Purpose**: Detailed view of a single thought
 
 **Features**:
-- Displays plant image, reflection, and metadata
-- Shows growth stage and emotion
-- Next step suggestions (if available)
-- Growth log with timeline:
-  - Original seed (initial thought)
-  - All updates with AI responses
-- Watering form (for non-fruit thoughts)
-- Delete functionality
+- Displays plant image, AI reflection, and metadata (emotion, topic, growth stage)
+- Next step card (do / clarify / reflect) when available
+- **MusicPlayer**: Optional embedded Spotify track and AI reasoning when `thought.music` is set
+- Growth log: original thought plus timeline of updates with AI responses
+- Watering form at bottom (for thoughts not yet mature)
+- Delete button and creation date in footer
 
 **UI Design**:
-- Circular plant image with gradient halo
-- Timeline visualization for updates
-- Responsive single-column layout
-- Footer with creation date and delete button
+- Single-column card layout; circular plant image with gradient
+- Framer Motion layout and AnimatePresence
 
-### [SettingsModal.tsx](file:///Users/amberwang/Desktop/MindGarden/components/SettingsModal.tsx)
+### [SettingsModal.tsx](components/SettingsModal.tsx)
 
 **Purpose**: Configuration panel for Supabase
 
@@ -227,19 +253,32 @@ The app uses predefined coordinates for plant placement across multiple "islands
 - Save/clear functionality
 - Updates `supabaseClient` configuration
 
-### [PlantSprite.tsx](file:///Users/amberwang/Desktop/MindGarden/components/PlantSprite.tsx)
+### [KonvaPlantSprite.tsx](components/KonvaPlantSprite.tsx)
 
-**Purpose**: Individual plant component in garden
+**Purpose**: Renders a single plant on the Konva canvas
 
 **Features**:
-- Positioned absolutely based on `thought.position`
-- Displays plant image
-- Growth stage indicator (colored dot)
-- "New" badge if unviewed
-- Hover and click interactions
-- Framer Motion animations (layout, hover, tap)
+- Uses `thoughtToWorldPosition(thought)` for placement in world coordinates
+- Plant image loaded and cached; size varies by `growthStage` (seed smallest, mature largest)
+- Konva Group with entry animation (scale/opacity tween) and optional floating bob
+- Growth stage indicator (colored ellipse) and "New" badge (Text) when `!thought.hasViewed`
+- Click handler to open ReflectionModal; hover state for feedback
+- Memoized to avoid unnecessary re-renders
 
-### [Header.tsx](file:///Users/amberwang/Desktop/MindGarden/components/Header.tsx)
+**Note**: `PlantSprite.tsx` exists for non-Konva use (e.g. DOM-based layouts); the main garden uses `KonvaPlantSprite`.
+
+### [MusicPlayer.tsx](components/MusicPlayer.tsx)
+
+**Purpose**: Displays the optional Spotify recommendation for a thought
+
+**Features**:
+- Renders only when `thought.music` (SongRecommendation) is present
+- Shows song name, artist, and AI reasoning (why the song fits)
+- Embedded Spotify iframe player (track preview)
+- Link to open in Spotify app/web
+- Gradient card styling consistent with the app
+
+### [Header.tsx](components/Header.tsx)
 
 **Purpose**: Top navigation bar
 
@@ -253,35 +292,34 @@ The app uses predefined coordinates for plant placement across multiple "islands
 
 ## Services
 
-### [geminiService.ts](file:///Users/amberwang/Desktop/MindGarden/services/geminiService.ts)
+### [geminiService.ts](services/geminiService.ts)
 
-**Purpose**: AI integration for content generation and analysis
+**Purpose**: AI integration for content generation, analysis, and image processing
 
 #### Configuration
 ```typescript
 const TEXT_MODEL = "gemini-3-flash-preview";
-const IMAGE_MODEL = "gemini-3-flash-preview-i";
-const IMAGE_SIZE = 512;
+const IMAGE_MODEL = "gemini-3-pro-image-preview";
+// Image generation uses aspectRatio "1:1", imageSize "1K"
 ```
 
 #### Main Functions
 
-##### `generateMindGardenContent(text: string): Promise<GeneratedContent>`
+##### `generateMindGardenContent(text: string): Promise<GeneratedContent & { songSuggestion }>`
 Creates a new thought with AI analysis and imagery.
 
 **Process**:
-1. Calls `analyzeTextAndReflect(text)` for metadata
-2. Calls `generateBotanyImage()` for plant image
-3. Returns `GeneratedContent` object
+1. Calls `analyzeTextAndReflect(text)` for metadata (includes `songSuggestion: { query, reasoning }`)
+2. Calls `generateBotanyImage()` for seed-stage plant image (category/emotion-driven)
+3. Image pipeline: Gemini generates image → optional `removeBackground(dataUri)` for transparency
+4. Returns `GeneratedContent` plus `songSuggestion` (consumed by App to call Spotify)
 
 **Returns**:
-```typescript
-{
-  imageUrl: string,      // Data URL of generated image
-  reflection: string,    // AI-generated reflection
-  meta: ThoughtMeta      // Structured metadata
-}
-```
+- `imageUrl`, `reflection`, `meta` (ThoughtMeta)
+- `songSuggestion`: `{ query: string, reasoning: string }` for Spotify search
+
+##### `removeBackground(dataUri: string): Promise<string>`
+Runs client-side background removal on a data URI image using `@imgly/background-removal`. Used inside `generateBotanyImage` after Gemini returns the image; on failure, the original data URI is returned.
 
 ##### `waterMindGardenThought(thought: ThoughtCard, updateText: string): Promise<WateringResponse>`
 Updates an existing thought and potentially advances growth stage.
@@ -309,33 +347,35 @@ Updates an existing thought and potentially advances growth stage.
 Analyzes user input using structured output schema.
 
 **Structured Output Schema**:
-- `emotion`: Dominant emotion (string)
-- `intensity`: Emotional intensity (low/medium/high)
-- `reflection`: Poetic reflection (2-3 sentences)
-- `category`: Thought category (ThoughtCategory enum)
-- `topic`: Short label (3-6 words)
-- `hasNextStep`: Boolean
-- `nextStep`: Object with `text`, `type` (do/clarify/reflect), `confidence`
+- `emotion`, `intensity`, `reflection`, `category` (ThoughtCategory), `topic`
+- `hasNextStep`, `nextStep` (text, type: do/clarify/reflect, confidence)
+- `songSuggestion`: `{ query: string, reasoning: string }` for Spotify
 
-##### `generateBotanyImage(species: string, stage: GrowthStage, emotion: string): Promise<string>`
-Generates botanical imagery using Imagen.
-
-**Prompt Construction**:
-- Base style: "Delicate digital watercolor botanical illustration"
-- Includes species, stage description, emotional quality
-- Negative prompt to exclude unwanted elements
-- Returns base64 data URL
+##### `generateBotanyImage(stage, emotion, category)`
+Generates botanical imagery using the Gemini image model. Uses `PLANT_SPECIES` (category → plant name and stage descriptions). After generation, runs `removeBackground()` for transparency; on failure keeps original image.
 
 **Error Handling**:
-- Retry logic with exponential backoff
-- Fallback to placeholder SVG on failure
+- Retry with backoff for overload/503; timeout for long runs
+- Image failure fallback (e.g. placeholder); background removal failure keeps original
 
 ##### `getClient()`
-Returns configured Gemini client using AI Studio API key or environment variable.
+Returns configured Gemini client using `process.env.API_KEY` / `GEMINI_API_KEY` (inlined by Vite).
 
 ---
 
-### [storageService.ts](file:///Users/amberwang/Desktop/MindGarden/services/storageService.ts)
+### [spotifyService.ts](services/spotifyService.ts)
+
+**Purpose**: Spotify Web API integration for mood-based song recommendations
+
+**Configuration**: Uses `process.env.SPOTIFY_CLIENT_ID` and `process.env.SPOTIFY_CLIENT_SECRET` (inlined by Vite).
+
+**Functions**:
+- **getSpotifyAccessToken()**: Client Credentials flow; caches token and refreshes before expiry
+- **searchTrack(query, reasoning?)**: Searches Spotify for a track, returns `SongRecommendation | null` (trackId, name, artist, albumArt, previewUrl, spotifyUrl, reasoning). Used by App after `generateMindGardenContent` when `songSuggestion.query` is present. Failures are non-blocking (thought is still saved without music)
+
+---
+
+### [storageService.ts](services/storageService.ts)
 
 **Purpose**: Hybrid data persistence layer
 
@@ -387,7 +427,7 @@ Uses `idb-keyval` for IndexedDB storage:
 
 ---
 
-### [supabaseClient.ts](file:///Users/amberwang/Desktop/MindGarden/services/supabaseClient.ts)
+### [supabaseClient.ts](services/supabaseClient.ts)
 
 **Purpose**: Supabase client initialization and configuration
 
@@ -410,14 +450,14 @@ Returns current URL and key from storage or env.
 
 ## Type System
 
-### Core Types ([types.ts](file:///Users/amberwang/Desktop/MindGarden/types.ts))
+### Core Types ([types.ts](types.ts))
 
 #### Enums and Literals
 
 ```typescript
-type ThoughtCategory = 'idea' | 'todo' | 'worry' | 'feeling' | 'goal' | 'memory' | 'other';
+type ThoughtCategory = 'idea' | 'todo' | 'feeling' | 'goal' | 'memory';
 type NextStepType = 'do' | 'clarify' | 'reflect';
-type GrowthStage = 'seed' | 'sprout' | 'bloom' | 'fruit';
+type GrowthStage = 'seed' | 'sprout' | 'bloom' | 'mature';
 
 enum AppView {
   GARDEN = 'GARDEN',
@@ -492,16 +532,30 @@ interface WateringResponse {
 }
 ```
 
+##### `SongRecommendation`
+```typescript
+interface SongRecommendation {
+  trackId: string;       // Spotify track ID
+  name: string;
+  artist: string;
+  albumArt?: string;
+  previewUrl?: string;
+  spotifyUrl: string;
+  reasoning?: string;    // AI reasoning for the suggestion
+}
+```
+
 ##### `ThoughtCard` (Main Data Model)
 ```typescript
 interface ThoughtCard extends GeneratedContent {
-  id: string;                    // UUID
-  originalText: string;          // User's initial thought
-  createdAt: number;             // Unix timestamp
-  position: Position;            // Garden placement
-  hasViewed: boolean;           // "New" badge flag
-  growthStage: GrowthStage;     // Current stage
-  updates: ThoughtUpdate[];     // Update history
+  id: string;
+  originalText: string;
+  createdAt: number;
+  position: Position;
+  hasViewed: boolean;
+  growthStage: GrowthStage;
+  updates: ThoughtUpdate[];
+  music?: SongRecommendation;  // Optional, from Spotify after songSuggestion
 }
 ```
 
@@ -513,6 +567,7 @@ interface ThoughtCard extends GeneratedContent {
 - **Node.js** (version 18+ recommended)
 - **Gemini API Key** from [AI Studio](https://aistudio.google.com)
 - **Supabase Project** (optional, for cloud storage)
+- **Spotify App** (optional, for mood-based music; create at [Spotify Developer Dashboard](https://developer.spotify.com/dashboard))
 
 ### Installation
 
@@ -527,30 +582,30 @@ interface ThoughtCard extends GeneratedContent {
    npm install
    ```
 
-3. **Configure Gemini API Key**:
+3. **Configure environment variables** (e.g. in `.env`):
    
-   The app checks for API keys in this order:
-   - AI Studio browser extension (if running in AI Studio)
-   - Environment variable `GEMINI_API_KEY`
-   
-   Create a `.env` file:
+   **Required for core features**:
    ```bash
    GEMINI_API_KEY=your_api_key_here
    ```
-
-4. **Configure Supabase** (Optional):
    
-   For cloud storage, either:
+   The app also checks for an API key via the AI Studio browser extension when running in AI Studio.
    
-   **Option A**: Environment variables
+   **Optional — Supabase** (cloud sync):
    ```bash
    SUPABASE_URL=your_supabase_url
    SUPABASE_KEY=your_supabase_anon_key
    ```
+   Alternatively, configure via the Settings modal in the app.
    
-   **Option B**: Settings modal in the app UI
+   **Optional — Spotify** (music recommendations):
+   ```bash
+   SPOTIFY_CLIENT_ID=your_client_id
+   SPOTIFY_CLIENT_SECRET=your_client_secret
+   ```
+   If not set, thoughts are still planted and saved; they simply won’t have an associated song.
    
-   **Supabase Schema**:
+   **Supabase schema** (when using cloud storage):
    ```sql
    CREATE TABLE thoughts (
      id TEXT PRIMARY KEY,
@@ -558,7 +613,6 @@ interface ThoughtCard extends GeneratedContent {
      data JSONB NOT NULL,
      created_at BIGINT NOT NULL
    );
-   
    CREATE INDEX idx_thoughts_user_id ON thoughts(user_id);
    ```
 
@@ -592,27 +646,35 @@ npm run preview
 
 ```
 MindGarden/
-├── components/           # React components
-│   ├── GardenCanvas.tsx
+├── components/
+│   ├── GardenCanvas.tsx     # Konva canvas, zoom/pan, island + plants
+│   ├── GardenGrid.tsx       # (Reserved / placeholder)
 │   ├── Header.tsx
+│   ├── KonvaPlantSprite.tsx # Plant sprite on Konva canvas
 │   ├── ListView.tsx
+│   ├── MusicPlayer.tsx      # Spotify embed + reasoning for thought.music
 │   ├── PlantingModal.tsx
-│   ├── PlantSprite.tsx
+│   ├── PlantSprite.tsx      # DOM-based plant (e.g. for alternate layouts)
 │   ├── ReflectionModal.tsx
-│   └── SettingsModal.tsx
-├── services/            # Business logic and external services
-│   ├── geminiService.ts
+│   ├── SettingsModal.tsx
+│   ├── ThoughtInput.tsx     # (Reserved / placeholder)
+│   └── ThoughtResult.tsx    # (Reserved / placeholder)
+├── hooks/
+│   ├── useIslandLayout.ts   # Slot system, world size, position helpers
+│   └── useKonvaCamera.ts    # Zoom, pan, animateZoomOut for Konva Stage
+├── services/
+│   ├── geminiService.ts     # Gemini text + image + removeBackground
+│   ├── spotifyService.ts    # Spotify auth + track search
 │   ├── storageService.ts
 │   └── supabaseClient.ts
-├── App.tsx              # Main application component
-├── index.tsx            # React entry point
-├── types.ts             # TypeScript type definitions
-├── index.html           # HTML template with Tailwind config
-├── vite.config.ts       # Vite configuration
-├── tsconfig.json        # TypeScript configuration
-├── package.json         # Dependencies and scripts
-├── island.svg           # Garden island SVG graphic
-└── .env                 # Environment variables (gitignored)
+├── App.tsx
+├── index.tsx
+├── types.ts
+├── index.html              # Tailwind CDN, fonts, theme
+├── island.svg              # Island background (cropped in layout)
+├── vite.config.ts          # Env define for API keys
+├── package.json
+└── .env                    # Gitignored; GEMINI_API_KEY, optional Supabase/Spotify
 ```
 
 ### Key Patterns
@@ -644,20 +706,19 @@ MindGarden/
 ### Common Tasks
 
 #### Changing Growth Stages
-Modify `GrowthStage` type and update:
-- Stage descriptions in `geminiService.ts` (`STAGE_DESCRIPTIONS`)
+Modify `GrowthStage` in `types.ts` and update:
+- `PLANT_SPECIES` and stage descriptions in `geminiService.ts`
 - Image prompts in `generateBotanyImage()`
-- UI indicators in components
+- `getPlantSize()` in `KonvaPlantSprite.tsx` and any stage indicators in UI
 
 #### Adjusting Island Layout
-- Edit `ISLAND_SLOTS` array in `App.tsx`
-- Modify coordinates as percentages (x: 0-100, y: 0-100)
-- Update `getNextAvailablePosition()` logic if changing slot count
+- Edit `ISLAND_SLOTS`, `ISLAND_WIDTH`, `ISLAND_HEIGHT`, `ISLAND_GAP`, `ISLANDS_PER_ROW` in `hooks/useIslandLayout.ts`
+- Slot positions are percentages relative to the full island SVG; migration for old positions is in `migratePosition()`
 
 #### Adding New Thought Categories
-1. Update `ThoughtCategory` type in `types.ts`
-2. Update UI category selector in `PlantingModal.tsx`
-3. Optionally adjust AI prompts to handle new category
+1. Update `ThoughtCategory` in `types.ts`
+2. Add an entry to `PLANT_SPECIES` in `geminiService.ts` (name + stage descriptions)
+3. Category is inferred by Gemini; no PlantingModal category selector in the current UI
 
 ---
 
@@ -666,8 +727,8 @@ Modify `GrowthStage` type and update:
 ### Gemini AI Usage
 
 #### Models Used
-- **gemini-3-flash-preview**: Text generation with structured output
-- **gemini-3-flash-preview-i**: Image generation (Imagen)
+- **gemini-3-flash-preview**: Text (analysis, reflection, next steps, song suggestion)
+- **gemini-3-pro-image-preview**: Image generation (botanical art); output then optionally passed through background removal
 
 #### Rate Limiting
 - Retry logic with exponential backoff (up to 2 retries)
@@ -739,13 +800,14 @@ Common patterns used:
 
 Potential areas for extension:
 - User authentication (replace anonymous UUID)
-- Sharing thoughts with others
-- Export/import functionality
-- Custom plant species selection
-- Seasonal themes or backgrounds
-- Sound effects and ambient audio
-- Mobile app (React Native)
+- Sharing thoughts or export (e.g. image/PDF)
+- Custom plant species or theme selection
+- Seasonal or time-of-day visual tweaks
+- Reminders / “water your garden” nudges
+- Richer personalization (reflection tone, music filters)
+- Mobile app (React Native) or PWA
 - Multiple gardens or collections
+- Community “seed packs” or read-only public gardens
 
 ---
 

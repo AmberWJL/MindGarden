@@ -1,0 +1,59 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#86efac', 'primaryTextColor': '#166534', 'primaryBorderColor': '#22c55e', 'lineColor': '#4ade80', 'secondaryColor': '#fef3c7', 'tertiaryColor': '#e0f2fe'}}}%%
+flowchart TB
+    subgraph user["🌸 You"]
+        U[Plant a thought\nWater & reflect]
+    end
+
+    subgraph app["🌿 MindGarden App"]
+        A[App.tsx]
+    end
+
+    subgraph ui["🖼️ UI Components"]
+        H[Header]
+        G[Garden Canvas]
+        L[List View]
+        P[Planting Modal]
+        R[Reflection Modal]
+        S[Settings Modal]
+    end
+
+    subgraph garden["🌱 Garden Layer"]
+        K[KonvaPlantSprite]
+        CAM[useKonvaCamera]
+        LAY[useIslandLayout]
+    end
+
+    subgraph services["☁️ Services"]
+        GEN[geminiService]
+        STO[storageService]
+        SPO[spotifyService]
+    end
+
+    subgraph storage["💾 Storage"]
+        SUP[Supabase]
+        IDB[IndexedDB]
+    end
+
+    subgraph external["🌐 External APIs"]
+        API1[Gemini AI]
+        API2[Spotify API]
+    end
+
+    U --> A
+    A --> H
+    A --> G
+    A --> L
+    A --> P
+    A --> R
+    A --> S
+    G --> K
+    G --> CAM
+    G --> LAY
+    R --> M[MusicPlayer]
+    A --> GEN
+    A --> STO
+    A --> SPO
+    STO --> SUP
+    STO --> IDB
+    GEN --> API1
+    SPO --> API2
