@@ -235,6 +235,6 @@ This project is developed as part of AI Studio. See the repository for license d
 
 **Made with 🌱 and AI**
 
-[Documentation](DOCUMENTATION.md) • [User Guide](USER_GUIDE.md) • [Deploy to Vercel](DEPLOY_VERCEL.md)
+[Documentation](DOCUMENTATION.md) • [User Guide](USER_GUIDE.md) 
 
 </div>
